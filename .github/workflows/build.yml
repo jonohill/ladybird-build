@@ -23,4 +23,11 @@ jobs:
         run: |
           cd ladybird
           Meta/ladybird.sh build
-          find .
+          zip -r Ladybird.zip Build/release/bin/Ladybird.app
+          cd -
+
+      - name: Save artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: ladybird/Ladybird.zip
