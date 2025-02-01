@@ -1,0 +1,22 @@
+name: Build
+
+on: [push]
+
+jobs:
+  
+  build:
+    
+    runs-on: macos-latest
+    
+    steps:
+      
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build
+        run: |
+          cd ladybird
+          Meta/ladybird.sh build
+          find .
