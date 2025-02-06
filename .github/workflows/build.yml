@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   
-  build:
+  build-mac:
     
     runs-on: macos-15
     
@@ -30,4 +30,40 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build
+          path: ladybird/Ladybird.zip
+
+  build-linux-arm:
+    
+    runs-on: ubuntu-22.04-arm
+    
+    steps:
+      
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y autoconf autoconf-archive automake build-essential ccache cmake curl fonts-liberation2 git libgl1-mesa-dev nasm ninja-build pkg-config qt6-base-dev qt6-tools-dev-tools qt6-wayland tar unzip zip
+          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+          echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/kitware.list
+          sudo apt update -y && sudo apt install cmake -y
+          sudo wget -O /usr/share/keyrings/llvm-snapshot.gpg.key https://apt.llvm.org/llvm-snapshot.gpg.key
+          echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg.key] https://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-19 main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
+          sudo apt update -y && sudo apt install clang-19 clangd-19 clang-format-19 clang-tidy-19 lld-19 -y
+          sudo apt install libpulse-dev
+
+      - name: Build
+        run: |
+          cd ladybird
+          Meta/ladybird.sh build
+          zip -r Ladybird.zip Build/release/bin
+          cd -
+
+      - name: Save artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ladybird-linux-arm
           path: ladybird/Ladybird.zip
