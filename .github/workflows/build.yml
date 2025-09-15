@@ -18,14 +18,10 @@ jobs:
         submodules: recursive
         path: ladybird
         
-    - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: '15.4'
-        
     - name: Install build dependencies
       run: |
-        brew install autoconf autoconf-archive automake ccache cmake nasm ninja pkg-config qt
+        # Install LLVM/Clang from Homebrew (minimum clang-19 required)
+        brew install llvm@20 autoconf autoconf-archive automake ccache cmake nasm ninja pkg-config qt
         
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -40,8 +36,9 @@ jobs:
         
     - name: Set environment variables
       run: |
-        echo "CC=$(xcrun -f clang)" >> $GITHUB_ENV
-        echo "CXX=$(xcrun -f clang++)" >> $GITHUB_ENV
+        # Use Homebrew clang instead of Xcode clang (minimum clang-19 required, we install clang-20)
+        echo "CC=$(brew --prefix llvm@20)/bin/clang" >> $GITHUB_ENV
+        echo "CXX=$(brew --prefix llvm@20)/bin/clang++" >> $GITHUB_ENV
         echo "CMAKE_BUILD_PARALLEL_LEVEL=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
         
     - name: Build Ladybird
