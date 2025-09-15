@@ -49,6 +49,7 @@ jobs:
         ./Meta/ladybird.py build
         
     - name: Create application bundle
+      if: ${{ github.ref == 'refs/heads/main' }}
       working-directory: ladybird
       run: |
         # Create a distributable app bundle
@@ -59,6 +60,7 @@ jobs:
         tar -czf ladybird-macos.tar.gz -C ladybird-macos Ladybird.app
         
     - name: Upload build artifacts
+      if: ${{ github.ref == 'refs/heads/main' }}
       uses: actions/upload-artifact@v4
       with:
         name: ladybird-macos-${{ github.sha }}
@@ -66,6 +68,7 @@ jobs:
         retention-days: 30
         
     - name: Upload app bundle (uncompressed)
+      if: ${{ github.ref == 'refs/heads/main' }}
       uses: actions/upload-artifact@v4
       with:
         name: ladybird-macos-app-${{ github.sha }}
