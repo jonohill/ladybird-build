@@ -1,69 +1,76 @@
-name: Build
+name: Build macOS
 
-on: [push]
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
 
 jobs:
-  
-  build-mac:
-    
-    runs-on: macos-15
+  build-macos:
+    runs-on: macos-latest
     
     steps:
-      
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install dependencies
-        run: |
-          brew install autoconf autoconf-archive automake ccache cmake nasm ninja pkg-config
-
-      - name: Build
-        run: |
-          cd ladybird
-          Meta/ladybird.sh build
-          zip -r Ladybird.zip Build/release/bin/Ladybird.app
-          cd -
-
-      - name: Save artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: ladybird/Ladybird.zip
-
-  build-linux-arm:
-    
-    runs-on: ubuntu-22.04-arm
-    
-    steps:
-      
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y autoconf autoconf-archive automake build-essential ccache cmake curl fonts-liberation2 git libgl1-mesa-dev nasm ninja-build pkg-config qt6-base-dev qt6-tools-dev-tools qt6-wayland tar unzip zip
-          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-          echo "deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/kitware.list
-          sudo apt update -y && sudo apt install cmake -y
-          sudo wget -O /usr/share/keyrings/llvm-snapshot.gpg.key https://apt.llvm.org/llvm-snapshot.gpg.key
-          echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot.gpg.key] https://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc)-19 main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
-          sudo apt update -y && sudo apt install clang-19 clangd-19 clang-format-19 clang-tidy-19 lld-19 -y
-          sudo apt install libpulse-dev
-
-      - name: Build
-        run: |
-          cd ladybird
-          Meta/ladybird.sh build
-          zip -r Ladybird.zip Build/release/bin
-          cd -
-
-      - name: Save artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ladybird-linux-arm
-          path: ladybird/Ladybird.zip
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        path: ladybird
+        
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: '15.4'
+        
+    - name: Install build dependencies
+      run: |
+        brew install autoconf autoconf-archive automake ccache cmake nasm ninja pkg-config qt
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Configure ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: macos-build
+        max-size: 2G
+        
+    - name: Set environment variables
+      run: |
+        echo "CC=$(xcrun -f clang)" >> $GITHUB_ENV
+        echo "CXX=$(xcrun -f clang++)" >> $GITHUB_ENV
+        echo "CMAKE_BUILD_PARALLEL_LEVEL=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
+        
+    - name: Build Ladybird
+      working-directory: ladybird
+      run: |
+        python3 -m venv build-env
+        source build-env/bin/activate
+        ./Meta/ladybird.py build
+        
+    - name: Create application bundle
+      working-directory: ladybird
+      run: |
+        # Create a distributable app bundle
+        mkdir -p ladybird-macos
+        cp -R Build/release/bin/Ladybird.app ladybird-macos/
+        
+        # Create a compressed archive
+        tar -czf ladybird-macos.tar.gz -C ladybird-macos Ladybird.app
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ladybird-macos-${{ github.sha }}
+        path: ladybird/ladybird-macos.tar.gz
+        retention-days: 30
+        
+    - name: Upload app bundle (uncompressed)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ladybird-macos-app-${{ github.sha }}
+        path: ladybird/Build/release/bin/Ladybird.app
+        retention-days: 7
