@@ -16,7 +16,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        path: ladybird
         
     - name: Install build dependencies
       run: |
@@ -42,16 +41,16 @@ jobs:
         echo "CMAKE_BUILD_PARALLEL_LEVEL=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
         
     - name: Build Ladybird
-      working-directory: ladybird
       run: |
+        cd ladybird
         python3 -m venv build-env
         source build-env/bin/activate
         ./Meta/ladybird.py build
         
     - name: Create application bundle
       if: ${{ github.ref == 'refs/heads/main' }}
-      working-directory: ladybird
       run: |
+        cd ladybird
         # Create a distributable app bundle
         mkdir -p ladybird-macos
         cp -R Build/release/bin/Ladybird.app ladybird-macos/
