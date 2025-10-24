@@ -60,7 +60,7 @@ jobs:
         
     - name: Upload build artifacts
       if: ${{ github.ref == 'refs/heads/main' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ladybird-macos-dmg-${{ github.sha }}
         path: ladybird/ladybird-macos.dmg
@@ -68,7 +68,7 @@ jobs:
         
     - name: Upload app bundle (uncompressed)
       if: ${{ github.ref == 'refs/heads/main' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ladybird-macos-app-${{ github.sha }}
         path: ladybird/Build/release/bin/Ladybird.app
