@@ -23,7 +23,7 @@ jobs:
         brew install llvm@20 autoconf autoconf-archive automake ccache cmake nasm ninja pkg-config qt
         
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: '3.14'
         
