@@ -49,15 +49,8 @@ jobs:
         
     - name: Create application bundle
       if: ${{ github.ref == 'refs/heads/main' }}
-      run: |
-        cd ladybird
-        # Create a distributable app bundle
-        mkdir -p ladybird-macos
-        cp -R Build/release/bin/Ladybird.app ladybird-macos/
-        
-        # Create DMG disk image
-        hdiutil create -volname "Ladybird" -srcfolder ladybird-macos -ov -format UDZO ladybird-macos.dmg
-        
+      run: ./.github/scripts/package-macos.sh
+
     - name: Upload build artifacts
       if: ${{ github.ref == 'refs/heads/main' }}
       uses: actions/upload-artifact@v7
@@ -66,10 +59,10 @@ jobs:
         path: ladybird/ladybird-macos.dmg
         retention-days: 30
         
-    - name: Upload app bundle (uncompressed)
+    - name: Upload app bundle (zipped)
       if: ${{ github.ref == 'refs/heads/main' }}
       uses: actions/upload-artifact@v7
       with:
         name: ladybird-macos-app-${{ github.sha }}
-        path: ladybird/Build/release/bin/Ladybird.app
+        path: ladybird/Ladybird.app.zip
         retention-days: 7
