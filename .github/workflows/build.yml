@@ -20,7 +20,7 @@ jobs:
     - name: Install build dependencies
       run: |
         # Install LLVM/Clang from Homebrew (minimum clang-19 required)
-        brew install llvm@20 autoconf autoconf-archive automake ccache cmake nasm ninja pkg-config qt
+        brew install llvm@20 autoconf autoconf-archive automake libtool ccache cmake nasm ninja pkg-config qt
         
     - name: Set up Python
       uses: actions/setup-python@v7
