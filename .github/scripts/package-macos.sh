@@ -29,24 +29,33 @@ cp -a "$BUILD_DIR"/lib/*.dylib "$APP/Contents/lib/"
 # libpng, libavif, libwebp, openssl, ...) which are not installed.
 cp -a "$BUILD_DIR"/vcpkg_installed/*/lib/*.dylib "$APP/Contents/lib/"
 
+rpaths_of() {
+    otool -l "$1" | awk '/LC_RPATH/ { f = 1 } f && /path / { print $2; f = 0 }'
+}
+
+# cmake --install already rewrites some rpaths, so adding one unconditionally
+# fails with "would duplicate path".
+add_rpath() {
+    rpaths_of "$1" | grep -Fxq "$2" || install_name_tool -add_rpath "$2" "$1"
+}
+
 # Binaries carry absolute rpaths into the build tree. Strip those and point at
 # the bundled libraries instead.
 for bin in "$APP"/Contents/MacOS/* "$APP"/Contents/lib/*.dylib; do
     # grep exits 1 when a binary has no build-tree rpath, which pipefail would
     # otherwise turn into a failure.
-    { otool -l "$bin" | awk '/LC_RPATH/ { f = 1 } f && /path / { print $2; f = 0 }' \
-        | grep "^$PWD" || true; } \
+    { rpaths_of "$bin" | grep "^$PWD" || true; } \
         | while read -r rpath; do
             install_name_tool -delete_rpath "$rpath" "$bin" 2>/dev/null || true
           done
 done
 for bin in "$APP"/Contents/MacOS/*; do
-    install_name_tool -add_rpath @executable_path/../lib "$bin"
+    add_rpath "$bin" @executable_path/../lib
 done
 # The libraries reference each other by @rpath as well, so let them resolve
 # siblings in their own directory.
 for lib in "$APP"/Contents/lib/*.dylib; do
-    install_name_tool -add_rpath @loader_path "$lib" 2>/dev/null || true
+    add_rpath "$lib" @loader_path
 done
 
 # install_name_tool invalidates signatures, so re-sign last. This is an ad-hoc
