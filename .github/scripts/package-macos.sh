@@ -60,7 +60,7 @@ done
 
 # install_name_tool invalidates signatures, so re-sign last. This is an ad-hoc
 # signature, so Gatekeeper still needs "Open Anyway" on first run.
-codesign --force --deep --sign - --entitlements Meta/debug.plist "$APP"
+codesign --force --deep --sign - --entitlements Meta/DebugEntitlements.plist "$APP"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
 # Zip the bundle ourselves. Uploading the .app directory directly makes
